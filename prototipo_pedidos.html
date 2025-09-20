@@ -1,0 +1,141 @@
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PagoExpress — Mini Portal de Pedidos</title>
+  <style>
+    body { font-family: Inter, system-ui, Arial, sans-serif; background:#f6f7fb; margin:0; color:#222; }
+    h1,h2{color:#0b5ccc;}
+    .container { max-width:900px; margin:24px auto; background:white; border-radius:12px; padding:20px; box-shadow:0 6px 18px rgba(20,30,80,0.08); }
+    label { display:block; margin-top:12px; font-weight:600; color:#333; }
+    input[type=text], textarea, select { width:100%; padding:12px; border:1px solid #e2e6ef; border-radius:8px; margin-top:8px; font-size:14px; }
+    .photos { display:flex; gap:10px; margin-top:8px; }
+    .photo-box { width:100px; height:80px; border:2px dashed #e0e4f0; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#9aa3c7; cursor:pointer; background:#fbfcff; position:relative; overflow:hidden; }
+    .photo-box img { width:100%; height:100%; object-fit:cover; }
+    .row { display:flex; gap:12px; }
+    .row > div { flex:1; }
+    .btn { background:#ff8a00; color:white; border:none; padding:12px 16px; border-radius:10px; font-weight:700; cursor:pointer; margin-top:12px; }
+    .note { font-size:13px; color:#666; margin-top:8px; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th,td { border:1px solid #e2e6ef; padding:8px; text-align:left; }
+    th { background:#f0f4ff; }
+    .paid { color:#0a7a3b; font-weight:700; }
+    .completed { text-decoration:line-through; color:#888; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Formulario de Pedido — Público</h1>
+    <label for="title">Título</label>
+    <input id="title" placeholder="Ej: Montar estantería">
+
+    <label for="description">Descripción</label>
+    <textarea id="description" rows="4" placeholder="Detalles de la tarea"></textarea>
+
+    <div class="row">
+      <div>
+        <label for="price">Precio (€)</label>
+        <input id="price" placeholder="20">
+      </div>
+      <div>
+        <label for="category">Categoría</label>
+        <select id="category">
+          <option>Montaje</option>
+          <option>Limpieza</option>
+          <option>Clases</option>
+          <option>Reparación</option>
+          <option>Otro</option>
+        </select>
+      </div>
+    </div>
+
+    <label for="location">Ubicación</label>
+    <input id="location" placeholder="Dirección o barrio">
+
+    <label for="datetime">Fecha / Hora</label>
+    <input id="datetime" placeholder="Hoy 10:00">
+
+    <button class="btn" id="sendOrder">Enviar Pedido</button>
+    <p class="note">Todos los pedidos se guardan en este navegador (localStorage) para prueba.</p>
+  </div>
+
+  <div class="container">
+    <h2>Panel de Administración</h2>
+    <table id="ordersTable">
+      <thead>
+        <tr><th>ID</th><th>Título</th><th>Precio (€)</th><th>Estado</th><th>Acciones</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <p class="note">Marca las tareas como pagadas o completadas para llevar control de ingresos.</p>
+  </div>
+
+<script>
+function loadOrders(){
+  const orders = JSON.parse(localStorage.getItem('orders')||'[]');
+  const tbody = document.querySelector('#ordersTable tbody');
+  tbody.innerHTML='';
+  orders.forEach(o=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${o.id}</td>
+      <td class="${o.completed?'completed':''}">${o.title}</td>
+      <td>${o.price}</td>
+      <td>${o.paid?'Pagado':'Pendiente'}</td>
+      <td>
+        <button onclick="markPaid('${o.id}')">Marcar Pagado</button>
+        <button onclick="markCompleted('${o.id}')">Marcar Completado</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function saveOrder(order){
+  const orders = JSON.parse(localStorage.getItem('orders')||'[]');
+  orders.unshift(order);
+  localStorage.setItem('orders', JSON.stringify(orders));
+  loadOrders();
+}
+
+function markPaid(id){
+  const orders = JSON.parse(localStorage.getItem('orders')||'[]');
+  orders.forEach(o=>{ if(o.id===id) o.paid=true; });
+  localStorage.setItem('orders', JSON.stringify(orders));
+  loadOrders();
+}
+
+function markCompleted(id){
+  const orders = JSON.parse(localStorage.getItem('orders')||'[]');
+  orders.forEach(o=>{ if(o.id===id) o.completed=true; });
+  localStorage.setItem('orders', JSON.stringify(orders));
+  loadOrders();
+}
+
+document.getElementById('sendOrder').addEventListener('click',()=>{
+  const title=document.getElementById('title').value.trim();
+  const desc=document.getElementById('description').value.trim();
+  const price=document.getElementById('price').value.trim();
+  const category=document.getElementById('category').value;
+  const location=document.getElementById('location').value.trim();
+  const datetime=document.getElementById('datetime').value.trim();
+  if(!title||!desc||!price){ alert('Rellene título, descripción y precio'); return; }
+  const order={
+    id:'o_'+Math.random().toString(36).slice(2,8),
+    title, desc, price, category, location, datetime, paid:false, completed:false
+  };
+  saveOrder(order);
+  alert('Pedido enviado correctamente.');
+  document.getElementById('title').value='';
+  document.getElementById('description').value='';
+  document.getElementById('price').value='';
+  document.getElementById('location').value='';
+  document.getElementById('datetime').value='';
+});
+
+// inicializar tabla
+loadOrders();
+</script>
+</body>
+</html>
